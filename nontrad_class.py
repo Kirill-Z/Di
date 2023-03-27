@@ -13,79 +13,122 @@ from keras.metrics import Precision, Recall
 from keras import backend as K
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+import numpy as np
 
 
 def decision_tree_classifier():
     (x_train, y_train), (x_test, y_test) = mnist.load_data()
 
-    y_train, s_train = scar(y_train, 8, 0.5)
-    y_test, s_test = scar(y_test, 8, 0.5)
+    x_train, y_train, s_train, len_true_data = scar(x_train, y_train, 8, 0.7)
+    x_test, y_test, s_test, _ = scar(x_test, y_test, 8, 1)
+
+    num_of_data = 45000
+    if num_of_data != 0:
+        end_num_of_data = num_of_data + len_true_data
+        if end_num_of_data > 60000:
+            print("Слишком большой запрос на количество данных")
+            exit(0)
+        x_train = x_train[:end_num_of_data]
+        s_train = s_train[:end_num_of_data]
 
     image_vector_size = 28 * 28
     x_train = x_train.reshape(x_train.shape[0], image_vector_size)
     x_test = x_test.reshape(x_test.shape[0], image_vector_size)
 
-    clf = DecisionTreeClassifier(random_state=0)
+    clf = DecisionTreeClassifier()
     clf.fit(x_train, s_train)
 
     s_test_hat = clf.predict(x_test)
+    print(s_test_hat)
+    print(np.count_nonzero(s_test_hat == True))
+
+    s_test_hat_bin = (s_test_hat >= 0.9) * 1
+    print(s_test_hat_bin)
+    print(np.count_nonzero(s_test_hat_bin == True))
+
     s_test_prob = clf.predict_proba(x_test)[:, 1]
 
-    s_train_pred = cross_val_predict(clf, x_train, s_train, cv=3)
+    s_test_pred = cross_val_predict(clf, x_test, s_test, cv=3)
     print(f1_score(s_test, s_test_hat))
     print(roc_auc_score(y_test, s_test_prob))
 
-    print("precision: ", precision_score(s_train, s_train_pred))
-    print("recall: ", recall_score(s_train, s_train_pred))
-    print("f1 score: ", f1_score(s_train, s_train_pred))
+    print("precision: ", precision_score(s_test, s_test_hat_bin))
+    print("recall: ", recall_score(s_test, s_test_hat_bin))
+    print("f1 score: ", f1_score(s_test, s_test_hat_bin))
+
 
 def random_forest_classifier():
     (x_train, y_train), (x_test, y_test) = mnist.load_data()
 
-    y_train, s_train = scar(y_train, 8, 0.1)
-    y_test, s_test = scar(y_test, 8, 0.1)
+    x_train, y_train, s_train, len_true_data = scar(x_train, y_train, 8, 0.3)
+    x_test, y_test, s_test, _ = scar(x_test, y_test, 8, 1)
+
+    num_of_data = 0
+    if num_of_data != 0:
+        end_num_of_data = num_of_data + len_true_data
+        if end_num_of_data > 60000:
+            print("Слишком большой запрос на количество данных")
+            exit(0)
+        x_train = x_train[:end_num_of_data]
+        s_train = s_train[:end_num_of_data]
 
     image_vector_size = 28 * 28
     x_train = x_train.reshape(x_train.shape[0], image_vector_size)
     x_test = x_test.reshape(x_test.shape[0], image_vector_size)
 
-    clf = RandomForestClassifier(random_state=0)
+    clf = RandomForestClassifier()
     clf.fit(x_train, s_train)
 
     s_test_hat = clf.predict(x_test)
+    s_test_hat_bin = (s_test_hat >= 0.5) * 1
     s_test_prob = clf.predict_proba(x_test)[:, 1]
 
-    s_train_pred = cross_val_predict(clf, x_train, s_train, cv=3)
+    s_test_pred = cross_val_predict(clf, x_test, s_test, cv=3)
     print(f1_score(s_test, s_test_hat))
     print(roc_auc_score(y_test, s_test_prob))
 
-    print("precision: ", precision_score(s_train, s_train_pred))
-    print("recall: ", recall_score(s_train, s_train_pred))
-    print("f1 score: ", f1_score(s_train, s_train_pred))
+    print(s_test)
+    print(s_test_hat)
+
+    print(np.count_nonzero(s_test == True))
+    print(np.count_nonzero(s_test_hat == True))
+
+    print("precision: ", precision_score(s_test, s_test_hat_bin))
+    print("recall: ", recall_score(s_test, s_test_hat_bin))
+    print("f1 score: ", f1_score(s_test, s_test_hat_bin))
 
 def sgd_classifier():
     (x_train, y_train), (x_test, y_test) = mnist.load_data()
 
-    y_train, s_train = scar(y_train, 8, 0.1)
-    y_test, s_test = scar(y_test, 8, 0.1)
+    x_train, y_train, s_train, len_true_data = scar(x_train, y_train, 8, 0.3)
+    x_test, y_test, s_test, _ = scar(x_test, y_test, 8, 1)
+
+    num_of_data = 1000
+    if num_of_data != 0:
+        end_num_of_data = num_of_data + len_true_data
+        if end_num_of_data > 60000:
+            print("Слишком большой запрос на количество данных")
+            exit(0)
+        x_train = x_train[:end_num_of_data]
+        s_train = s_train[:end_num_of_data]
 
     image_vector_size = 28 * 28
     x_train = x_train.reshape(x_train.shape[0], image_vector_size)
     x_test = x_test.reshape(x_test.shape[0], image_vector_size)
 
-    clf = SGDClassifier(random_state=0)
+    clf = SGDClassifier()
     clf.fit(x_train, s_train)
 
     s_test_hat = clf.predict(x_test)
     s_test_prob = clf.predict_proba(x_test)[:, 1]
 
-    s_train_pred = cross_val_predict(clf, x_train, s_train, cv=3)
+    s_test_pred = cross_val_predict(clf, x_test, s_test, cv=3)
     print(f1_score(s_test, s_test_hat))
     print(roc_auc_score(y_test, s_test_prob))
 
-    print("precision: ", precision_score(s_train, s_train_pred))
-    print("recall: ", recall_score(s_train, s_train_pred))
-    print("f1 score: ", f1_score(s_train, s_train_pred))
+    print("precision: ", precision_score(s_test, s_test_hat))
+    print("recall: ", recall_score(s_test, s_test_hat))
+    print("f1 score: ", f1_score(s_test, s_test_hat))
 
 
 def neural_network_classifier():
@@ -109,7 +152,7 @@ def neural_network_classifier():
             return f1
         model.summary()
         model.compile(optimizer='sgd', loss='binary_crossentropy', metrics=[Precision(), Recall()])
-        history = model.fit(x_train, s_train, batch_size=batch_size, epochs=epochs, validation_split=.1, verbose=False)
+        history = model.fit(x_train, s_train, batch_size=batch_size, epochs=epochs, validation_data=(x_test, s_test), verbose=False)
         # y_train_pred = cross_val_predict(model, x_train, y_train_8, cv=3)
 
         print("precision: ", history.history)
@@ -146,8 +189,17 @@ def neural_network_classifier():
 
     (x_train, y_train), (x_test, y_test) = mnist.load_data()
 
-    y_train, s_train = scar(y_train, 8, 0.8)
-    y_test, s_test = scar(y_test, 8, 0.8)
+    x_train, y_train, s_train, len_true_data = scar(x_train, y_train, 8, 0.3)
+    x_test, y_test, s_test, _ = scar(x_test, y_test, 8, 1)
+
+    num_of_data = 1000
+    if num_of_data != 0:
+        end_num_of_data = num_of_data + len_true_data
+        if end_num_of_data > 60000:
+            print("Слишком большой запрос на количество данных")
+            exit(0)
+        x_train = x_train[:end_num_of_data]
+        s_train = s_train[:end_num_of_data]
 
     image_vector_size = 28 * 28
     x_train = x_train.reshape(x_train.shape[0], image_vector_size)
@@ -156,6 +208,7 @@ def neural_network_classifier():
     image_size = 784
     model = create_dense([2048])
     evaluate(model)
+
 
 if __name__ == '__main__':
     decision_tree_classifier()
