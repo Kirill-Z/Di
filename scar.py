@@ -5,7 +5,7 @@ c = 0.1  # Label frequency
 
 
 def scar(x_train, y_train, label, e=0.1):
-    y_train[y_train != label] = 0
+    y_train[y_train != label] = -1
     y_train[y_train == label] = 1
     s_train = change_label(y_train, e)
     x_train, y_train, s_train, len_true_data = replace_data(x_train, y_train, s_train)

@@ -38,6 +38,7 @@ def decision_tree_classifier():
     clf = DecisionTreeClassifier()
     clf.fit(x_train, s_train)
 
+
     s_test_hat = clf.predict(x_test)
     print(s_test_hat)
     print(np.count_nonzero(s_test_hat == True))
@@ -192,7 +193,7 @@ def neural_network_classifier():
     x_train, y_train, s_train, len_true_data = scar(x_train, y_train, 8, 0.3)
     x_test, y_test, s_test, _ = scar(x_test, y_test, 8, 1)
 
-    num_of_data = 1000
+    num_of_data = 0
     if num_of_data != 0:
         end_num_of_data = num_of_data + len_true_data
         if end_num_of_data > 60000:
@@ -211,4 +212,4 @@ def neural_network_classifier():
 
 
 if __name__ == '__main__':
-    decision_tree_classifier()
+    neural_network_classifier()
