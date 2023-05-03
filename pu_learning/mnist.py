@@ -9,6 +9,7 @@ import warnings
 import tensorflow as tf
 from CNN import cnn, cnn_2
 import csv
+from sklearn.model_selection import train_test_split
 
 
 def read_csv(file_name):
@@ -16,6 +17,7 @@ def read_csv(file_name):
     file = open(file_path, "r")
     data = list(csv.reader(file, delimiter=","))
     data = list(map(list, zip(*data)))
+    data = data[1:]
     file.close()
     return data
 
@@ -111,7 +113,7 @@ def convert_to_PU(X, y, c, num_of_data=60000):
     y = np.concatenate((np.ones((pos.shape[0], 1)), np.full((neg.shape[0], 1), 0)))
     s = np.concatenate((np.ones((P.shape[0], 1)), np.full((U.shape[0], 1), 0)))
     end_num_of_data = 60000
-    if num_of_data != 60000:
+    if num_of_data != 60000 and num_of_data != 620:
         end_num_of_data = num_of_data + pos_size
         X = X[:end_num_of_data]
         y = y[:end_num_of_data]
@@ -122,6 +124,8 @@ def convert_to_PU(X, y, c, num_of_data=60000):
 
 
 def get_predicted_class(estimator, x_train, s_train, x_test):
+    print(x_train.shape)
+    print(s_train.shape)
     estimator.fit(x_train, s_train)
     return estimator.predict(x_test)
 
@@ -143,6 +147,60 @@ def get_data():
     X_test, y_test = convert_data_to_binary(x_test, y_test)
 
     return X, y, X_test, y_test
+
+
+def main_for_fog():
+    print("Loading dataset")
+    x_true = read_csv("fog_true.csv")
+    y_true = np.ones((len(x_true),), dtype=int)
+    x_false = read_csv("fog_false.csv")
+    y_false = np.zeros((len(x_false),), dtype=int)
+    for i in range(0, len(x_false)):
+        for j in range(0, len(x_false[i])):
+            x_false[i][j] = int(x_false[i][j])
+    for i in range(0, len(x_true)):
+        for j in range(0, len(x_true[i])):
+            x_true[i][j] = int(x_true[i][j])
+
+    x = x_false + x_true  # 620 examples
+    y = np.concatenate((y_false, y_true))
+    x = np.array(x)
+    y = np.array(y)
+    X_train, X_test, y_train, y_test = train_test_split(x, y, test_size=0.2)
+
+    c_list = [0.3, 0.5, 0.7, 1]
+    num_of_data_list = [620, 465, 310, 155, 12]
+    num_of_data_list = [620]
+
+    result = pd.DataFrame(columns=["c", "Num of data", "Precision", "Recall", "F1-score"])
+    trad_result = pd.DataFrame(columns=["c", "Num of data", "Precision", "Recall", "F1-score"])
+
+    X_test, y_test, s_test, _ = convert_to_PU(X_test, y_test, 1)
+    for c in c_list:
+        for num_of_data in num_of_data_list:
+            print("c", c, "\nnum_of_data:", num_of_data)
+
+            X_train, y_train, s_train, _ = convert_to_PU(X_train, y_train, c, num_of_data)
+
+            print("PU learning in progress...")
+            estimator = DecisionTreeClassifier()
+
+            unique, counts = np.unique(s_train, return_counts=True)
+            print(dict(zip(unique, counts)))
+
+            y_pred = get_predicted_class(ElkanotoPuClassifier(estimator), X_train, s_train.ravel(), X_test)
+            stat = get_estimates(y_test.ravel(), y_pred, c, num_of_data)
+            result = result._append(stat, ignore_index=True)
+
+            print("Regular learning in progress...")
+            y_pred = get_predicted_class(estimator, X_train, s_train.ravel(), X_test)
+            stat = get_estimates(y_test.ravel(), y_pred, c, num_of_data)
+            trad_result = trad_result._append(stat, ignore_index=True)
+
+    print(result)
+    print(trad_result)
+
+
 
 
 def main():
@@ -180,7 +238,7 @@ def main():
 
                 print("PU learning in progress...")
                 estimator = RandomForestClassifier()
-                y_pred = get_predicted_class(estimator, X_train, s_train.ravel(), X_test)
+                y_pred = get_predicted_class(ElkanotoPuClassifier(estimator), X_train, s_train.ravel(), X_test)
                 stat = get_estimates(y_test.ravel(), y_pred, c, num_of_data)
                 result = result._append(stat, ignore_index=True)
 
@@ -194,5 +252,5 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    main_for_fog()
 
