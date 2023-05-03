@@ -2,11 +2,26 @@ import numpy as np
 import pandas as pd
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.svm import SVC
 from sklearn.metrics import precision_recall_fscore_support
 from pulearn import ElkanotoPuClassifier
 import warnings
 import tensorflow as tf
 from CNN import cnn, cnn_2
+import csv
+
+
+def read_csv(file_name):
+    file_path = "/home/kirill/PycharmProjects/Di/pu_learning/" + file_name
+    file = open(file_path, "r")
+    data = list(csv.reader(file, delimiter=","))
+    data = list(map(list, zip(*data)))
+    file.close()
+    return data
+
+
+def convert_txt_to_csv(file_name):
+    file = "/home/kirill/PycharmProjects/Di/" + file_name
 
 
 def convert_data_to_binary(x_train_all, y_train_all):
@@ -95,7 +110,7 @@ def convert_to_PU(X, y, c, num_of_data=60000):
     X = np.concatenate((P, U))
     y = np.concatenate((np.ones((pos.shape[0], 1)), np.full((neg.shape[0], 1), 0)))
     s = np.concatenate((np.ones((P.shape[0], 1)), np.full((U.shape[0], 1), 0)))
-
+    end_num_of_data = 60000
     if num_of_data != 60000:
         end_num_of_data = num_of_data + pos_size
         X = X[:end_num_of_data]
@@ -103,7 +118,7 @@ def convert_to_PU(X, y, c, num_of_data=60000):
         s = s[:end_num_of_data]
     # Shuffle again
     X, y, s = shuffle(X, y, s)
-    return X, y, s
+    return X, y, s, end_num_of_data
 
 
 def get_predicted_class(estimator, x_train, s_train, x_test):
@@ -140,26 +155,31 @@ def main():
     result = pd.DataFrame(columns=["c", "Num of data", "Precision", "Recall", "F1-score"])
     trad_result = pd.DataFrame(columns=["c", "Num of data", "Precision", "Recall", "F1-score"])
 
-    X_test, y_test, s_test = convert_to_PU(X_test, y_test, 1)
+    X_test, y_test, s_test, _ = convert_to_PU(X_test, y_test, 1)
 
 
     estimator = "cnn_2"
     if estimator == "cnn_2":
-        c = 0.7
-        num_of_data = 60000
-        X_train, y_train, s_train = convert_to_PU(X, y, c, num_of_data)
-
-        cnn_2(X_train, s_train.ravel(), X_test, s_test.ravel())
+        for c in c_list:
+            for num_of_data in num_of_data_list:
+                print("c", c, "\nnum_of_data:", num_of_data)
+                X_train, y_train, s_train, shape_size = convert_to_PU(X, y, c, num_of_data)
+                precision, recall, f1_score = cnn_2(X_train, s_train.ravel(), X_test, s_test.ravel(), shape_size)
+                stat = {
+                    "c": c, "Num of data": int(num_of_data), "Precision": round(precision, 3),
+                    "Recall": round(recall, 3), "F1-score": round(f1_score, 3)
+                }
+                result = result._append(stat, ignore_index=True)
+        print(result)
     else:
-
         for c in c_list:
             for num_of_data in num_of_data_list:
                 print("c", c, "\nnum_of_data:", num_of_data)
 
-                X_train, y_train, s_train = convert_to_PU(X, y, c, num_of_data)
+                X_train, y_train, s_train, _ = convert_to_PU(X, y, c, num_of_data)
 
                 print("PU learning in progress...")
-                estimator = ElkanotoPuClassifier(estimator)
+                estimator = RandomForestClassifier()
                 y_pred = get_predicted_class(estimator, X_train, s_train.ravel(), X_test)
                 stat = get_estimates(y_test.ravel(), y_pred, c, num_of_data)
                 result = result._append(stat, ignore_index=True)
