@@ -56,7 +56,7 @@ def cnn_2(x_train, y_train, x_test, y_test, shape_size):
     history = model.fit(
         x=x_train, y=y_train,
         validation_split=0.1,
-        epochs=30
+        epochs=5
     )
 
     metrics = pd.DataFrame(history.history)

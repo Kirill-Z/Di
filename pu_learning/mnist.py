@@ -2,12 +2,12 @@ import numpy as np
 import pandas as pd
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.svm import SVC
+from sklearn import svm
 from sklearn.metrics import precision_recall_fscore_support
 from pulearn import ElkanotoPuClassifier
 import warnings
 import tensorflow as tf
-from CNN import cnn, cnn_2
+from CNN import cnn_2
 import csv
 from sklearn.model_selection import train_test_split
 
@@ -44,7 +44,7 @@ def convert_data_to_binary(x_train_all, y_train_all):
 
 
     y_P = np.ones((X_P.shape[0], 1))
-    y_N = np.full((X_N.shape[0], 1), 0)
+    y_N = np.full((X_N.shape[0], 1), 0.)
 
     X_P = X_P.reshape(X_P.shape[0], X_P.shape[1] * X_P.shape[2])
     X_N = X_N.reshape(X_N.shape[0], X_N.shape[1] * X_N.shape[2])
@@ -94,7 +94,7 @@ def convert_to_PU(X, y, c, num_of_data=60000):
     y_reshaped = y.reshape(y.shape[0])
 
     pos_mask = y_reshaped == 1.
-    neg_mask = y_reshaped == 0
+    neg_mask = y_reshaped == 0.
 
     pos = X[pos_mask, :]
     neg = X[neg_mask, :]
@@ -110,9 +110,12 @@ def convert_to_PU(X, y, c, num_of_data=60000):
     U = np.concatenate((Q, N))
 
     X = np.concatenate((P, U))
-    y = np.concatenate((np.ones((pos.shape[0], 1)), np.full((neg.shape[0], 1), 0)))
-    s = np.concatenate((np.ones((P.shape[0], 1)), np.full((U.shape[0], 1), 0)))
-    end_num_of_data = 60000
+    y = np.concatenate((np.ones((pos.shape[0], 1)), np.full((neg.shape[0], 1), 0.)))
+    s = np.concatenate((np.ones((P.shape[0], 1)), np.full((U.shape[0], 1), 0.)))
+    if num_of_data == 60000:
+        end_num_of_data = 60000
+    elif num_of_data == 620:
+        end_num_of_data = 620
     if num_of_data != 60000 and num_of_data != 620:
         end_num_of_data = num_of_data + pos_size
         X = X[:end_num_of_data]
@@ -124,14 +127,12 @@ def convert_to_PU(X, y, c, num_of_data=60000):
 
 
 def get_predicted_class(estimator, x_train, s_train, x_test):
-    print(x_train.shape)
-    print(s_train.shape)
     estimator.fit(x_train, s_train)
     return estimator.predict(x_test)
 
 
 def get_estimates(y_test, y_pred, c, num_of_data):
-    precision, recall, f1_score, _ = precision_recall_fscore_support(y_test.ravel(), y_pred)
+    precision, recall, f1_score, _ = precision_recall_fscore_support(y_test, y_pred)
     stat = {
         "c": c, "Num of data": int(num_of_data), "Precision": round(precision[1], 3),
         "Recall": round(recall[1], 3), "F1-score": round(f1_score[1], 3)
@@ -170,7 +171,7 @@ def main_for_fog():
 
     c_list = [0.3, 0.5, 0.7, 1]
     num_of_data_list = [620, 465, 310, 155, 12]
-    num_of_data_list = [620]
+    #num_of_data_list = [620]
 
     result = pd.DataFrame(columns=["c", "Num of data", "Precision", "Recall", "F1-score"])
     trad_result = pd.DataFrame(columns=["c", "Num of data", "Precision", "Recall", "F1-score"])
@@ -183,12 +184,12 @@ def main_for_fog():
             X_train, y_train, s_train, _ = convert_to_PU(X_train, y_train, c, num_of_data)
 
             print("PU learning in progress...")
-            estimator = DecisionTreeClassifier()
+            estimator = RandomForestClassifier()
 
             unique, counts = np.unique(s_train, return_counts=True)
             print(dict(zip(unique, counts)))
 
-            y_pred = get_predicted_class(ElkanotoPuClassifier(estimator), X_train, s_train.ravel(), X_test)
+            y_pred = get_predicted_class(estimator, X_train, s_train.ravel(), X_test)
             stat = get_estimates(y_test.ravel(), y_pred, c, num_of_data)
             result = result._append(stat, ignore_index=True)
 
@@ -208,7 +209,7 @@ def main():
     X, y, X_test, y_test = get_data()
 
     c_list = [0.3, 0.5, 0.7, 1]
-    num_of_data_list = [60000, 45000, 30000, 15000, 1000]
+    num_of_data_list = [60000, 45000, 30000, 15000, 5000, 1000]
 
     result = pd.DataFrame(columns=["c", "Num of data", "Precision", "Recall", "F1-score"])
     trad_result = pd.DataFrame(columns=["c", "Num of data", "Precision", "Recall", "F1-score"])
@@ -220,12 +221,12 @@ def main():
     if estimator == "cnn_2":
         for c in c_list:
             for num_of_data in num_of_data_list:
-                print("c", c, "\nnum_of_data:", num_of_data)
+                print("c:", c, "\nnum_of_data:", num_of_data)
                 X_train, y_train, s_train, shape_size = convert_to_PU(X, y, c, num_of_data)
                 precision, recall, f1_score = cnn_2(X_train, s_train.ravel(), X_test, s_test.ravel(), shape_size)
                 stat = {
-                    "c": c, "Num of data": int(num_of_data), "Precision": round(precision, 3),
-                    "Recall": round(recall, 3), "F1-score": round(f1_score, 3)
+                    "c": c, "Num of data": int(num_of_data), "Precision": precision,
+                    "Recall": recall, "F1-score": f1_score
                 }
                 result = result._append(stat, ignore_index=True)
         print(result)
@@ -238,9 +239,9 @@ def main():
 
                 print("PU learning in progress...")
                 estimator = RandomForestClassifier()
-                y_pred = get_predicted_class(ElkanotoPuClassifier(estimator), X_train, s_train.ravel(), X_test)
-                stat = get_estimates(y_test.ravel(), y_pred, c, num_of_data)
-                result = result._append(stat, ignore_index=True)
+                #y_pred = get_predicted_class(ElkanotoPuClassifier(estimator), X_train, s_train.ravel(), X_test)
+                #stat = get_estimates(y_test.ravel(), y_pred, c, num_of_data)
+                #result = result._append(stat, ignore_index=True)
 
                 print("Regular learning in progress...")
                 y_pred = get_predicted_class(estimator, X_train, s_train.ravel(), X_test)
@@ -252,5 +253,5 @@ def main():
 
 
 if __name__ == '__main__':
-    main_for_fog()
+    main()
 
