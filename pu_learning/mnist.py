@@ -8,22 +8,7 @@ from pulearn import ElkanotoPuClassifier
 import warnings
 import tensorflow as tf
 from CNN import cnn_2
-import csv
-from sklearn.model_selection import train_test_split
 
-
-def read_csv(file_name):
-    file_path = "/home/kirill/PycharmProjects/Di/pu_learning/" + file_name
-    file = open(file_path, "r")
-    data = list(csv.reader(file, delimiter=","))
-    data = list(map(list, zip(*data)))
-    data = data[1:]
-    file.close()
-    return data
-
-
-def convert_txt_to_csv(file_name):
-    file = "/home/kirill/PycharmProjects/Di/" + file_name
 
 
 def convert_data_to_binary(x_train_all, y_train_all):
@@ -44,7 +29,7 @@ def convert_data_to_binary(x_train_all, y_train_all):
 
 
     y_P = np.ones((X_P.shape[0], 1))
-    y_N = np.full((X_N.shape[0], 1), 0.)
+    y_N = np.full((X_N.shape[0], 1), -1.)
 
     X_P = X_P.reshape(X_P.shape[0], X_P.shape[1] * X_P.shape[2])
     X_N = X_N.reshape(X_N.shape[0], X_N.shape[1] * X_N.shape[2])
@@ -86,7 +71,7 @@ def shuffle(x, y=empty, z=empty):
     warnings.filterwarnings("ignore")
 
 
-def convert_to_PU(X, y, c, num_of_data=60000):
+def convert_to_PU(X, y, c, num_of_data, default_num_of_data):
     n, m = X.shape
     len_y = len(np.where(y == 1.)[0])
     pos_size = int(c * len_y)
@@ -94,7 +79,7 @@ def convert_to_PU(X, y, c, num_of_data=60000):
     y_reshaped = y.reshape(y.shape[0])
 
     pos_mask = y_reshaped == 1.
-    neg_mask = y_reshaped == 0.
+    neg_mask = y_reshaped == -1.
 
     pos = X[pos_mask, :]
     neg = X[neg_mask, :]
@@ -108,19 +93,20 @@ def convert_to_PU(X, y, c, num_of_data=60000):
     N = neg
 
     U = np.concatenate((Q, N))
+    U = shuffle(U)
 
     X = np.concatenate((P, U))
-    y = np.concatenate((np.ones((pos.shape[0], 1)), np.full((neg.shape[0], 1), 0.)))
-    s = np.concatenate((np.ones((P.shape[0], 1)), np.full((U.shape[0], 1), 0.)))
-    if num_of_data == 60000:
-        end_num_of_data = 60000
-    elif num_of_data == 620:
-        end_num_of_data = 620
-    if num_of_data != 60000 and num_of_data != 620:
+    y = np.concatenate((np.ones((pos.shape[0], 1)), np.full((neg.shape[0], 1), -1.)))
+    s = np.concatenate((np.ones((P.shape[0], 1)), np.full((U.shape[0], 1), -1.)))
+
+    if num_of_data == default_num_of_data:
+        end_num_of_data = default_num_of_data
+    if num_of_data != default_num_of_data:
         end_num_of_data = num_of_data + pos_size
         X = X[:end_num_of_data]
         y = y[:end_num_of_data]
         s = s[:end_num_of_data]
+
     # Shuffle again
     X, y, s = shuffle(X, y, s)
     return X, y, s, end_num_of_data
@@ -150,63 +136,9 @@ def get_data():
     return X, y, X_test, y_test
 
 
-def main_for_fog():
-    print("Loading dataset")
-    x_true = read_csv("fog_true.csv")
-    y_true = np.ones((len(x_true),), dtype=int)
-    x_false = read_csv("fog_false.csv")
-    y_false = np.zeros((len(x_false),), dtype=int)
-    for i in range(0, len(x_false)):
-        for j in range(0, len(x_false[i])):
-            x_false[i][j] = int(x_false[i][j])
-    for i in range(0, len(x_true)):
-        for j in range(0, len(x_true[i])):
-            x_true[i][j] = int(x_true[i][j])
-
-    x = x_false + x_true  # 620 examples
-    y = np.concatenate((y_false, y_true))
-    x = np.array(x)
-    y = np.array(y)
-    X_train, X_test, y_train, y_test = train_test_split(x, y, test_size=0.2)
-
-    c_list = [0.3, 0.5, 0.7, 1]
-    num_of_data_list = [620, 465, 310, 155, 12]
-    #num_of_data_list = [620]
-
-    result = pd.DataFrame(columns=["c", "Num of data", "Precision", "Recall", "F1-score"])
-    trad_result = pd.DataFrame(columns=["c", "Num of data", "Precision", "Recall", "F1-score"])
-
-    X_test, y_test, s_test, _ = convert_to_PU(X_test, y_test, 1)
-    for c in c_list:
-        for num_of_data in num_of_data_list:
-            print("c", c, "\nnum_of_data:", num_of_data)
-
-            X_train, y_train, s_train, _ = convert_to_PU(X_train, y_train, c, num_of_data)
-
-            print("PU learning in progress...")
-            estimator = RandomForestClassifier()
-
-            unique, counts = np.unique(s_train, return_counts=True)
-            print(dict(zip(unique, counts)))
-
-            y_pred = get_predicted_class(estimator, X_train, s_train.ravel(), X_test)
-            stat = get_estimates(y_test.ravel(), y_pred, c, num_of_data)
-            result = result._append(stat, ignore_index=True)
-
-            print("Regular learning in progress...")
-            y_pred = get_predicted_class(estimator, X_train, s_train.ravel(), X_test)
-            stat = get_estimates(y_test.ravel(), y_pred, c, num_of_data)
-            trad_result = trad_result._append(stat, ignore_index=True)
-
-    print(result)
-    print(trad_result)
-
-
-
-
 def main():
     print("Loading dataset")
-    X, y, X_test, y_test = get_data()
+    X, y, X_test_data, y_test_data = get_data()
 
     c_list = [0.3, 0.5, 0.7, 1]
     num_of_data_list = [60000, 45000, 30000, 15000, 5000, 1000]
@@ -214,16 +146,16 @@ def main():
     result = pd.DataFrame(columns=["c", "Num of data", "Precision", "Recall", "F1-score"])
     trad_result = pd.DataFrame(columns=["c", "Num of data", "Precision", "Recall", "F1-score"])
 
-    X_test, y_test, s_test, _ = convert_to_PU(X_test, y_test, 1)
+    #X_test, y_test, s_test, _ = convert_to_PU(X_test, y_test, 1, 10000, 10000)
 
-
-    estimator = "cnn_2"
+    estimator = ""
     if estimator == "cnn_2":
         for c in c_list:
             for num_of_data in num_of_data_list:
                 print("c:", c, "\nnum_of_data:", num_of_data)
-                X_train, y_train, s_train, shape_size = convert_to_PU(X, y, c, num_of_data)
-                precision, recall, f1_score = cnn_2(X_train, s_train.ravel(), X_test, s_test.ravel(), shape_size)
+                X_test, y_test = shuffle(X_test_data, y_test_data)
+                X_train, y_train, s_train, shape_size = convert_to_PU(X, y, c, num_of_data, len(X))
+                precision, recall, f1_score = cnn_2(X_train, s_train.ravel(), X_test, y_test.ravel(), shape_size)
                 stat = {
                     "c": c, "Num of data": int(num_of_data), "Precision": precision,
                     "Recall": recall, "F1-score": f1_score
@@ -234,19 +166,23 @@ def main():
         for c in c_list:
             for num_of_data in num_of_data_list:
                 print("c", c, "\nnum_of_data:", num_of_data)
-
-                X_train, y_train, s_train, _ = convert_to_PU(X, y, c, num_of_data)
+                X_test, y_test = shuffle(X_test_data, y_test_data)
+                X_train, y_train, s_train, _ = convert_to_PU(X, y, c, num_of_data, len(X))
 
                 print("PU learning in progress...")
                 estimator = RandomForestClassifier()
-                #y_pred = get_predicted_class(ElkanotoPuClassifier(estimator), X_train, s_train.ravel(), X_test)
-                #stat = get_estimates(y_test.ravel(), y_pred, c, num_of_data)
-                #result = result._append(stat, ignore_index=True)
-
-                print("Regular learning in progress...")
-                y_pred = get_predicted_class(estimator, X_train, s_train.ravel(), X_test)
+                #unique, counts = np.unique(s_train, return_counts=True)
+                #print(dict(zip(unique, counts)))
+                y_pred = get_predicted_class(ElkanotoPuClassifier(estimator), X_train, s_train.ravel(), X_test)
                 stat = get_estimates(y_test.ravel(), y_pred, c, num_of_data)
-                trad_result = trad_result._append(stat, ignore_index=True)
+                result = result._append(stat, ignore_index=True)
+
+        X_test, y_test = shuffle(X_test_data, y_test_data)
+        X_train, y_train, s_train, _ = convert_to_PU(X, y, 1, 60000, len(X))
+        print("Regular learning in progress...")
+        y_pred = get_predicted_class(estimator, X_train, s_train.ravel(), X_test)
+        stat = get_estimates(y_test.ravel(), y_pred, 1, 60000)
+        trad_result = trad_result._append(stat, ignore_index=True)
 
         print(result)
         print(trad_result)
