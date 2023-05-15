@@ -10,7 +10,6 @@ import tensorflow as tf
 from CNN import cnn_2
 
 
-
 def convert_data_to_binary(x_train_all, y_train_all):
     # @markdown Select positive and negative classes:
     Positive_class = 8
@@ -29,7 +28,7 @@ def convert_data_to_binary(x_train_all, y_train_all):
 
 
     y_P = np.ones((X_P.shape[0], 1))
-    y_N = np.full((X_N.shape[0], 1), -1.)
+    y_N = np.full((X_N.shape[0], 1), 0)
 
     X_P = X_P.reshape(X_P.shape[0], X_P.shape[1] * X_P.shape[2])
     X_N = X_N.reshape(X_N.shape[0], X_N.shape[1] * X_N.shape[2])
@@ -79,7 +78,7 @@ def convert_to_PU(X, y, c, num_of_data, default_num_of_data):
     y_reshaped = y.reshape(y.shape[0])
 
     pos_mask = y_reshaped == 1.
-    neg_mask = y_reshaped == -1.
+    neg_mask = y_reshaped == 0
 
     pos = X[pos_mask, :]
     neg = X[neg_mask, :]
@@ -96,8 +95,8 @@ def convert_to_PU(X, y, c, num_of_data, default_num_of_data):
     U = shuffle(U)
 
     X = np.concatenate((P, U))
-    y = np.concatenate((np.ones((pos.shape[0], 1)), np.full((neg.shape[0], 1), -1.)))
-    s = np.concatenate((np.ones((P.shape[0], 1)), np.full((U.shape[0], 1), -1.)))
+    y = np.concatenate((np.ones((pos.shape[0], 1)), np.full((neg.shape[0], 1), 0)))
+    s = np.concatenate((np.ones((P.shape[0], 1)), np.full((U.shape[0], 1), 0)))
 
     if num_of_data == default_num_of_data:
         end_num_of_data = default_num_of_data
@@ -163,6 +162,7 @@ def main():
                 result = result._append(stat, ignore_index=True)
         print(result)
     else:
+        estimator = RandomForestClassifier()
         for c in c_list:
             for num_of_data in num_of_data_list:
                 print("c", c, "\nnum_of_data:", num_of_data)
@@ -170,19 +170,21 @@ def main():
                 X_train, y_train, s_train, _ = convert_to_PU(X, y, c, num_of_data, len(X))
 
                 print("PU learning in progress...")
-                estimator = RandomForestClassifier()
-                #unique, counts = np.unique(s_train, return_counts=True)
-                #print(dict(zip(unique, counts)))
+                unique, counts = np.unique(s_train, return_counts=True)
+                print(len(y_train))
+                print(len(s_train))
+                print(dict(zip(unique, counts)))
                 y_pred = get_predicted_class(ElkanotoPuClassifier(estimator), X_train, s_train.ravel(), X_test)
                 stat = get_estimates(y_test.ravel(), y_pred, c, num_of_data)
                 result = result._append(stat, ignore_index=True)
 
-        X_test, y_test = shuffle(X_test_data, y_test_data)
-        X_train, y_train, s_train, _ = convert_to_PU(X, y, 1, 60000, len(X))
-        print("Regular learning in progress...")
-        y_pred = get_predicted_class(estimator, X_train, s_train.ravel(), X_test)
-        stat = get_estimates(y_test.ravel(), y_pred, 1, 60000)
-        trad_result = trad_result._append(stat, ignore_index=True)
+        for num_of_data in num_of_data_list:
+            X_test, y_test = shuffle(X_test_data, y_test_data)
+            X_train, y_train, s_train, _ = convert_to_PU(X, y, 1, num_of_data, len(X))
+            print("Regular learning in progress...")
+            y_pred = get_predicted_class(estimator, X_train, s_train.ravel(), X_test)
+            stat = get_estimates(y_test.ravel(), y_pred, 1, num_of_data)
+            trad_result = trad_result._append(stat, ignore_index=True)
 
         print(result)
         print(trad_result)
