@@ -2,12 +2,11 @@ import numpy as np
 import pandas as pd
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
-from sklearn import svm
 from sklearn.metrics import precision_recall_fscore_support
 from pulearn import ElkanotoPuClassifier
 import warnings
 import tensorflow as tf
-from CNN import cnn_2
+from CNN import cnn
 
 
 def convert_data_to_binary(x_train_all, y_train_all):
@@ -28,7 +27,7 @@ def convert_data_to_binary(x_train_all, y_train_all):
 
 
     y_P = np.ones((X_P.shape[0], 1))
-    y_N = np.full((X_N.shape[0], 1), 0)
+    y_N = np.full((X_N.shape[0], 1), -1)
 
     X_P = X_P.reshape(X_P.shape[0], X_P.shape[1] * X_P.shape[2])
     X_N = X_N.reshape(X_N.shape[0], X_N.shape[1] * X_N.shape[2])
@@ -78,7 +77,7 @@ def convert_to_PU(X, y, c, num_of_data, default_num_of_data):
     y_reshaped = y.reshape(y.shape[0])
 
     pos_mask = y_reshaped == 1.
-    neg_mask = y_reshaped == 0
+    neg_mask = y_reshaped == -1.
 
     pos = X[pos_mask, :]
     neg = X[neg_mask, :]
@@ -95,18 +94,17 @@ def convert_to_PU(X, y, c, num_of_data, default_num_of_data):
     U = shuffle(U)
 
     X = np.concatenate((P, U))
-    y = np.concatenate((np.ones((pos.shape[0], 1)), np.full((neg.shape[0], 1), 0)))
-    s = np.concatenate((np.ones((P.shape[0], 1)), np.full((U.shape[0], 1), 0)))
+    y = np.concatenate((np.ones((pos.shape[0], 1)), np.full((neg.shape[0], 1), -1.)))
+    s = np.concatenate((np.ones((P.shape[0], 1)), np.full((U.shape[0], 1), -1.)))
 
     if num_of_data == default_num_of_data:
         end_num_of_data = default_num_of_data
-    if num_of_data != default_num_of_data:
+    elif num_of_data != default_num_of_data:
         end_num_of_data = num_of_data + pos_size
         X = X[:end_num_of_data]
         y = y[:end_num_of_data]
         s = s[:end_num_of_data]
 
-    # Shuffle again
     X, y, s = shuffle(X, y, s)
     return X, y, s, end_num_of_data
 
@@ -145,8 +143,6 @@ def main():
     result = pd.DataFrame(columns=["c", "Num of data", "Precision", "Recall", "F1-score"])
     trad_result = pd.DataFrame(columns=["c", "Num of data", "Precision", "Recall", "F1-score"])
 
-    #X_test, y_test, s_test, _ = convert_to_PU(X_test, y_test, 1, 10000, 10000)
-
     estimator = ""
     if estimator == "cnn_2":
         for c in c_list:
@@ -154,7 +150,7 @@ def main():
                 print("c:", c, "\nnum_of_data:", num_of_data)
                 X_test, y_test = shuffle(X_test_data, y_test_data)
                 X_train, y_train, s_train, shape_size = convert_to_PU(X, y, c, num_of_data, len(X))
-                precision, recall, f1_score = cnn_2(X_train, s_train.ravel(), X_test, y_test.ravel(), shape_size)
+                precision, recall, f1_score = cnn(X_train, s_train.ravel(), X_test, y_test.ravel(), shape_size)
                 stat = {
                     "c": c, "Num of data": int(num_of_data), "Precision": precision,
                     "Recall": recall, "F1-score": f1_score

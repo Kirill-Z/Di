@@ -1,24 +1,22 @@
 import numpy as np
-import csv
 from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
-from sklearn import svm
-from sklearn.metrics import precision_recall_fscore_support
 from pulearn import ElkanotoPuClassifier
-from load_fog_data import get_data
+from load_wind_data import WindData
 import pandas as pd
 from mnist import convert_to_PU, get_predicted_class, get_estimates, shuffle
-from CNN import cnn_2
+from CNN import cnn
 
 
-clear_data_path = "/home/kirill/PycharmProjects/Di/clear_data"
+#clear_data_path = "/home/kirill/PycharmProjects/Di/clear_wind_data"
+data = WindData()
 
-def main_for_fog():
+def main():
     print("Loading dataset")
-    x_true, x_false = get_data()
+    x_true, x_false = data.get_data()
     y_true = np.ones((len(x_true), 1))
-    y_false = np.full((len(x_false), 1), 0)
+    y_false = np.full((len(x_false), 1), -1.)
 
     x = np.concatenate((x_true, x_false))
     y = np.concatenate((y_true, y_false))
@@ -29,7 +27,6 @@ def main_for_fog():
 
     len_data = len(X)
     num_of_data_list = [len_data, len_data*0.75, len_data*0.5, len_data*0.25, len_data*0.1, len_data*0.02]
-    #num_of_data_list = [620]
 
     result = pd.DataFrame(columns=["c", "Num of data", "Precision", "Recall", "F1-score"])
     trad_result = pd.DataFrame(columns=["c", "Num of data", "Precision", "Recall", "F1-score"])
@@ -37,10 +34,11 @@ def main_for_fog():
     if estimator == "cnn_2":
         for c in c_list:
             for num_of_data in num_of_data_list:
+                num_of_data = int(num_of_data)
                 print("c:", c, "\nnum_of_data:", num_of_data)
                 X_test, y_test = shuffle(X_test_data, y_test_data)
                 X_train, y_train, s_train, shape_size = convert_to_PU(X, y, c, num_of_data, len(X))
-                precision, recall, f1_score = cnn_2(X_train, s_train.ravel(), X_test, y_test.ravel(), shape_size)
+                precision, recall, f1_score = cnn(X_train, s_train.ravel(), X_test, y_test.ravel(), shape_size)
                 stat = {
                     "c": c, "Num of data": int(num_of_data), "Precision": precision,
                     "Recall": recall, "F1-score": f1_score
@@ -52,13 +50,11 @@ def main_for_fog():
         for c in c_list:
             for num_of_data in num_of_data_list:
                 num_of_data = int(num_of_data)
-                print("c", c, "\nnum_of_data:", num_of_data)
+                print("c:", c, "\nnum_of_data:", num_of_data)
                 X_test, y_test = shuffle(X_test_data, y_test_data)
                 X_train, y_train, s_train, _ = convert_to_PU(X, y, c, num_of_data, len_data)
 
                 print("PU learning in progress...")
-
-
                 unique, counts = np.unique(s_train, return_counts=True)
                 print(dict(zip(unique, counts)))
 
@@ -81,4 +77,4 @@ def main_for_fog():
 
 
 if __name__ == '__main__':
-    main_for_fog()
+    main()
