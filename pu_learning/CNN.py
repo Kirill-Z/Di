@@ -10,7 +10,7 @@ from sklearn.metrics import precision_recall_fscore_support
 
 def cnn_builder(shape_size):
     model = Sequential([
-        layers.Flatten(input_shape=(1, 34)),
+        layers.Flatten(input_shape=(1, 90)),
         layers.Dense(300, activation="relu"),
         layers.Dense(100, activation="relu"),
         layers.Dense(1, activation="sigmoid"),
@@ -31,10 +31,7 @@ def cnn(x_train, y_train, x_test, y_test, shape_size):
     #x_train = x_train.reshape((shape_size, 34))
     #x_test = x_test.reshape((x_test.shape[0], 34))
 
-    x_train = x_train / 255.0
-    x_test = x_test / 255.0
-
-    model = cnn_builder((shape_size, 34))
+    model = cnn_builder((shape_size, 90))
     model.summary()
     history = model.fit(
         x=x_train, y=y_train,
