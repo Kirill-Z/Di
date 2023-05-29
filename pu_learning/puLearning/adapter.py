@@ -11,11 +11,8 @@ class PUAdapter(object):
 
     def __fit_no_precomputed_kernel(self, x, y):
         positives = np.where(y == 1.)[0]
-        print(len(x))
-        print(len(y))
-        print("len positives:", len(positives))
+
         hold_out_size = int(np.ceil(len(positives) * self.hold_out_ratio))
-        print("hold out size:", hold_out_size)
 
         np.random.shuffle(positives)
         hold_out = positives[:hold_out_size]
@@ -23,24 +20,24 @@ class PUAdapter(object):
         x = np.delete(x, hold_out, 0)
         y = np.delete(y, hold_out)
 
-        # P(s=1|x)
+        # Обучаем классификатор предсказывать вероятность того, что образец будет помечен P(s=1|x)
         self.estimator.fit(x, y)
-
+        # Используем классификатор для предсказания вероятности того, что положительные образцы будут помечены P(s=1|y = 1)
         predictions = self.estimator.predict_proba(x_hold_out)
 
-        try:
-            predictions = predictions[:,1]
-        except:
-            pass
+        # Получаем вероятность, что предсказана 1
+        predictions = predictions[:,1]
 
+        # Получаем среднюю вероятность
         c = np.mean(predictions)
 
         self.c = c
-        print("len positive data:", len(positives))
-        print(c)
-        exit()
+        #print("len positive data:", len(positives))
+        #print(c)
+        #exit()
 
         self.estimator_fitted = True
+        return self.estimator, c
 
     def predict_proba(self, x):
         if not self.estimator_fitted:
@@ -48,16 +45,14 @@ class PUAdapter(object):
 
         probablistic_predictions = self.estimator.predict_proba(x)
 
-        try:
-            probablistic_predictions = probablistic_predictions[:,1]
-        except:
-            pass
+
+        probablistic_predictions = probablistic_predictions[:,1]
 
         return probablistic_predictions / self.c
 
-    def predict(self, x, treshold=0.5):
+    def predict(self, x, threshold=1):
         if not self.estimator_fitted:
             raise Exception("The estimator must be fitted before calling predict(...).")
 
-        return np.array([1. if p > treshold else -1 for p in self.predict_proba(x)])
+        return np.array([1. if p > threshold else -1 for p in self.predict_proba(x)])
 

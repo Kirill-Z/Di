@@ -7,6 +7,7 @@ from pulearn import ElkanotoPuClassifier
 import warnings
 import tensorflow as tf
 from CNN import cnn
+from puLearning.adapter import PUAdapter
 
 
 def convert_data_to_binary(x_train_all, y_train_all):
@@ -114,11 +115,11 @@ def get_predicted_class(estimator, x_train, s_train, x_test):
     return estimator.predict(x_test)
 
 
-def get_estimates(y_test, y_pred, c, num_of_data):
+def get_estimates(y_test, y_pred, c, num_of_negative_data, num_of_positive_data):
     precision, recall, f1_score, _ = precision_recall_fscore_support(y_test, y_pred)
     stat = {
-        "c": c, "Num of data": int(num_of_data), "Precision": round(precision[1], 3),
-        "Recall": round(recall[1], 3), "F1-score": round(f1_score[1], 3)
+        "c": c, "Num of negative data": int(num_of_negative_data), "Num of positive data": int(num_of_positive_data),
+        "Total num of data": int(num_of_negative_data)+int(num_of_positive_data), "Precision": round(precision[1], 3), "Recall": round(recall[1], 3), "F1-score": round(f1_score[1], 3)
     }
     return stat
 
@@ -142,7 +143,8 @@ def main():
 
     result = pd.DataFrame(columns=["c", "Num of data", "Precision", "Recall", "F1-score"])
     trad_result = pd.DataFrame(columns=["c", "Num of data", "Precision", "Recall", "F1-score"])
-
+    c_list = [1]
+    num_of_data_list = [30000]
     estimator = ""
     if estimator == "cnn_2":
         for c in c_list:
@@ -158,7 +160,7 @@ def main():
                 result = result._append(stat, ignore_index=True)
         print(result)
     else:
-        estimator = RandomForestClassifier()
+        estimator = RandomForestClassifier(n_jobs=4)
         for c in c_list:
             for num_of_data in num_of_data_list:
                 print("c", c, "\nnum_of_data:", num_of_data)
@@ -166,11 +168,11 @@ def main():
                 X_train, y_train, s_train, _ = convert_to_PU(X, y, c, num_of_data, len(X))
 
                 print("PU learning in progress...")
-                unique, counts = np.unique(s_train, return_counts=True)
-                print(len(y_train))
-                print(len(s_train))
-                print(dict(zip(unique, counts)))
-                y_pred = get_predicted_class(ElkanotoPuClassifier(estimator), X_train, s_train.ravel(), X_test)
+                #unique, counts = np.unique(s_train, return_counts=True)
+                #print(len(y_train))
+                #print(len(s_train))
+                #print(dict(zip(unique, counts)))
+                y_pred = get_predicted_class(PUAdapter(estimator), X_train, s_train.ravel(), X_test)
                 stat = get_estimates(y_test.ravel(), y_pred, c, num_of_data)
                 result = result._append(stat, ignore_index=True)
 
