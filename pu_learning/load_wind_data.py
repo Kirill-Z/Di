@@ -19,5 +19,3 @@ class WindData(Data):
                     break
             i += 1
         return data
-
-a = WindData()()

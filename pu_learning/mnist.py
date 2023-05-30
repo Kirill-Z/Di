@@ -2,12 +2,13 @@ import numpy as np
 import pandas as pd
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import precision_recall_fscore_support
+from sklearn.metrics import precision_recall_fscore_support, confusion_matrix
 from pulearn import ElkanotoPuClassifier
 import warnings
 import tensorflow as tf
 from CNN import cnn
 from puLearning.adapter import PUAdapter
+from matplotlib import pyplot
 
 
 def convert_data_to_binary(x_train_all, y_train_all):
@@ -32,7 +33,7 @@ def convert_data_to_binary(x_train_all, y_train_all):
 
     X_P = X_P.reshape(X_P.shape[0], X_P.shape[1] * X_P.shape[2])
     X_N = X_N.reshape(X_N.shape[0], X_N.shape[1] * X_N.shape[2])
-    # Combine
+
     X = np.concatenate((X_P, X_N))
     y = np.concatenate((y_P, y_N))
 
@@ -124,70 +125,70 @@ def get_estimates(y_test, y_pred, c, num_of_negative_data, num_of_positive_data)
     return stat
 
 
-def get_data():
-    mnist = tf.keras.datasets.mnist
-    (x_train, y_train), (x_test, y_test) = mnist.load_data()
-
-    X, y = convert_data_to_binary(x_train, y_train)
-    X_test, y_test = convert_data_to_binary(x_test, y_test)
-
-    return X, y, X_test, y_test
 
 
-def main():
-    print("Loading dataset")
-    X, y, X_test_data, y_test_data = get_data()
+class MnistEstimator:
+    def __init__(self, estimator=RandomForestClassifier(n_jobs=4), neural_network=False):
+        self.x_train, self.x_test, self.y_train, self.y_test = self.get_train_test_data()
+        self.estimator = estimator
+        self.neural_network = neural_network
+        self.percent_of_positive_data = [0.3, 0.5, 0.7, 1]
+        self.num_of_data_list = [60000, 45000, 30000, 15000, 5000, 1000]
+        self.result = pd.DataFrame(
+            columns=[
+                "c", "Num of negative data", "Num of positive data", "Total num of data", "Precision", "Recall",
+                "F1-score"
+            ])
 
-    c_list = [0.3, 0.5, 0.7, 1]
-    num_of_data_list = [60000, 45000, 30000, 15000, 5000, 1000]
+    def get_train_test_data(self):
+        mnist = tf.keras.datasets.mnist
+        (x_train, y_train), (x_test, y_test) = mnist.load_data()
 
-    result = pd.DataFrame(columns=["c", "Num of data", "Precision", "Recall", "F1-score"])
-    trad_result = pd.DataFrame(columns=["c", "Num of data", "Precision", "Recall", "F1-score"])
-    c_list = [1]
-    num_of_data_list = [30000]
-    estimator = ""
-    if estimator == "cnn_2":
-        for c in c_list:
-            for num_of_data in num_of_data_list:
-                print("c:", c, "\nnum_of_data:", num_of_data)
-                X_test, y_test = shuffle(X_test_data, y_test_data)
-                X_train, y_train, s_train, shape_size = convert_to_PU(X, y, c, num_of_data, len(X))
-                precision, recall, f1_score = cnn(X_train, s_train.ravel(), X_test, y_test.ravel(), shape_size)
-                stat = {
-                    "c": c, "Num of data": int(num_of_data), "Precision": precision,
-                    "Recall": recall, "F1-score": f1_score
-                }
-                result = result._append(stat, ignore_index=True)
-        print(result)
-    else:
-        estimator = RandomForestClassifier(n_jobs=4)
-        for c in c_list:
-            for num_of_data in num_of_data_list:
-                print("c", c, "\nnum_of_data:", num_of_data)
-                X_test, y_test = shuffle(X_test_data, y_test_data)
-                X_train, y_train, s_train, _ = convert_to_PU(X, y, c, num_of_data, len(X))
+        x_train, y_train = convert_data_to_binary(x_train, y_train)
+        x_test, y_test = convert_data_to_binary(x_test, y_test)
 
-                print("PU learning in progress...")
-                #unique, counts = np.unique(s_train, return_counts=True)
-                #print(len(y_train))
-                #print(len(s_train))
-                #print(dict(zip(unique, counts)))
-                y_pred = get_predicted_class(PUAdapter(estimator), X_train, s_train.ravel(), X_test)
-                stat = get_estimates(y_test.ravel(), y_pred, c, num_of_data)
-                result = result._append(stat, ignore_index=True)
+        return x_train, x_test, y_train, y_test
 
-        for num_of_data in num_of_data_list:
-            X_test, y_test = shuffle(X_test_data, y_test_data)
-            X_train, y_train, s_train, _ = convert_to_PU(X, y, 1, num_of_data, len(X))
-            print("Regular learning in progress...")
-            y_pred = get_predicted_class(estimator, X_train, s_train.ravel(), X_test)
-            stat = get_estimates(y_test.ravel(), y_pred, 1, num_of_data)
-            trad_result = trad_result._append(stat, ignore_index=True)
+    def get_estimates(self, inscription, percent_of_positive_data=1):
+        for num_of_data in self.num_of_data_list:
+            print(inscription)
+            print("percent of positive data:", percent_of_positive_data, "\nnum_of_data:", num_of_data)
+            x_test, y_test = shuffle(self.x_test, self.y_test)
+            x_train, y_train, s_train, _ = convert_to_PU(self.x_train, self.y_train, percent_of_positive_data, num_of_data, len(self.x_train))
+            y_pred = get_predicted_class(PUAdapter(self.estimator), x_train, s_train.ravel(), x_test)
+            conf_matrix = confusion_matrix(y_test, y_pred)
+            tn, fp, fn, tp = conf_matrix.ravel()
+            print(len(np.where(s_train == 1.)[0]))
+            print(conf_matrix)
+            print("tn:", tn, "fp:", fp)
+            print("fn:", fn, "tp:", tp)
+            num_positive_data = len(np.where(s_train == 1.)[0])
+            num_negative_data = len(np.where(s_train == -1.)[0])
+            stat = get_estimates(y_test.ravel(), y_pred, percent_of_positive_data, num_negative_data, num_positive_data)
+            self.result = self.result._append(stat, ignore_index=True)
 
-        print(result)
-        print(trad_result)
 
+    def main(self):
+        if self.neural_network:
+            self.result = pd.DataFrame(columns=["c", "Num of data", "Precision", "Recall", "F1-score"])
+            for c in self.percent_of_positive_data:
+                for num_of_data in self.num_of_data_list:
+                    print("c:", c, "\nnum_of_data:", num_of_data)
+                    x_test, y_test = shuffle(self.x_test, self.y_test)
+                    x_train, y_train, s_train, shape_size = convert_to_PU(self.x_train, self.y_train, c, num_of_data, len(self.x_train))
+                    precision, recall, f1_score = cnn(x_train, s_train.ravel(), x_test, y_test.ravel(), shape_size)
+                    stat = {
+                        "c": c, "Num of data": int(num_of_data), "Precision": precision,
+                        "Recall": recall, "F1-score": f1_score
+                    }
+                    self.result = self.result._append(stat, ignore_index=True)
+        else:
+            for c in self.percent_of_positive_data:
+                self.get_estimates("PU learning in progress...", c)
+            self.get_estimates("Regular learning in progress...")
+        print(self.result)
 
 if __name__ == '__main__':
-    main()
+    estimator = MnistEstimator()
+    estimator.main()
 

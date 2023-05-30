@@ -32,27 +32,15 @@ class PUAdapter(object):
         c = np.mean(predictions)
 
         self.c = c
-        #print("len positive data:", len(positives))
-        #print(c)
-        #exit()
 
         self.estimator_fitted = True
         return self.estimator, c
 
     def predict_proba(self, x):
-        if not self.estimator_fitted:
-            raise Exception("The estimator must be fitted before calling predict_proba(...).")
-
         probablistic_predictions = self.estimator.predict_proba(x)
-
-
         probablistic_predictions = probablistic_predictions[:,1]
-
         return probablistic_predictions / self.c
 
-    def predict(self, x, threshold=1):
-        if not self.estimator_fitted:
-            raise Exception("The estimator must be fitted before calling predict(...).")
-
+    def predict(self, x, threshold=0.5):
         return np.array([1. if p > threshold else -1 for p in self.predict_proba(x)])
 
