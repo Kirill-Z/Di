@@ -1,14 +1,11 @@
 import numpy as np
 import pandas as pd
-from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import precision_recall_fscore_support, confusion_matrix
-from pulearn import ElkanotoPuClassifier
 import warnings
 import tensorflow as tf
 from CNN import cnn
 from puLearning.adapter import PUAdapter
-from matplotlib import pyplot
 
 
 def convert_data_to_binary(x_train_all, y_train_all):
@@ -158,8 +155,6 @@ class MnistEstimator:
             y_pred = get_predicted_class(PUAdapter(self.estimator), x_train, s_train.ravel(), x_test)
             conf_matrix = confusion_matrix(y_test, y_pred)
             tn, fp, fn, tp = conf_matrix.ravel()
-            print(len(np.where(s_train == 1.)[0]))
-            print(conf_matrix)
             print("tn:", tn, "fp:", fp)
             print("fn:", fn, "tp:", tp)
             num_positive_data = len(np.where(s_train == 1.)[0])

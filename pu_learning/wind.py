@@ -1,13 +1,7 @@
 import numpy as np
 from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import f1_score, precision_score, recall_score, confusion_matrix
-from pulearn import ElkanotoPuClassifier
 from load_wind_data import WindData
-import pandas as pd
-from mnist import convert_to_PU, get_predicted_class, get_estimates, shuffle
-from CNN import cnn
-from puLearning.adapter import PUAdapter
+from mnist import shuffle
 from mnist import MnistEstimator
 
 
@@ -28,7 +22,7 @@ class WindEstimator(MnistEstimator):
         y = np.concatenate((y_true, y_false))
 
         x, y = shuffle(x, y)
-        x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2)
+        x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.33, random_state=42)
         return x_train, x_test, y_train, y_test
 
 
@@ -36,7 +30,6 @@ class WindEstimator(MnistEstimator):
         for c in self.percent_of_positive_data:
             self.get_estimates("PU learning in progress...", c)
         self.get_estimates("Regular learning in progress...")
-
         print(self.result)
 
 
