@@ -10,7 +10,7 @@ class PUAdapter(object):
         self.estimator_fitted = False
 
     def __fit_no_precomputed_kernel(self, x, y):
-        positives = np.where(y == 1.)[0]
+        positives = np.where(y == 1.0)[0]
 
         hold_out_size = int(np.ceil(len(positives) * self.hold_out_ratio))
 
@@ -26,7 +26,7 @@ class PUAdapter(object):
         predictions = self.estimator.predict_proba(x_hold_out)
 
         # Получаем вероятность, что предсказана 1
-        predictions = predictions[:,1]
+        predictions = predictions[:, 1]
 
         # Получаем среднюю вероятность
         c = np.mean(predictions)
@@ -38,9 +38,8 @@ class PUAdapter(object):
 
     def predict_proba(self, x):
         probablistic_predictions = self.estimator.predict_proba(x)
-        probablistic_predictions = probablistic_predictions[:,1]
+        probablistic_predictions = probablistic_predictions[:, 1]
         return probablistic_predictions / self.c
 
     def predict(self, x, threshold=0.5):
-        return np.array([1. if p > threshold else -1 for p in self.predict_proba(x)])
-
+        return np.array([1.0 if p > threshold else -1 for p in self.predict_proba(x)])
