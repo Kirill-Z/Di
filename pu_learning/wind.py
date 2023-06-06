@@ -10,7 +10,8 @@ class WindEstimator(Estimator):
     def __init__(self, data, estimator, neural_network):
         self.data = data
         super().__init__(data, estimator, neural_network)
-        self.num_of_data_list = [964, 861, 574, 287, 114, 22]
+        self.percent_of_positive_data = [0.7]
+        self.num_of_data_list = [540]
 
     def get_train_test_data(self):
         x_true, x_false = self.data.get_data()
@@ -31,22 +32,6 @@ class WindEstimator(Estimator):
             self.get_estimates("PU learning in progress...", c)
         self.get_estimates("Regular learning in progress...")
         print(self.result)
-
-
-def get_one_param_data(x_data, num_calc_param):
-    x_one_param = []
-    for x in x_data:
-        x_one_param.append(x[num_calc_param])
-    x_one_param = np.array(x_one_param)
-    return x_one_param.reshape(-1, 1)
-
-
-def get_many_param_data(x_data, params):
-    x_params = []
-    for x in x_data:
-        x_params.append(list(x[i] for i in params))
-    x_params = np.array(x_params)
-    return x_params
 
 
 if __name__ == "__main__":

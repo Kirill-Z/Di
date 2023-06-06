@@ -18,6 +18,12 @@ class ThunderData(Data):
             false_data, float
         )
 
+    def del_garbage(self, data):
+        data = data.replace([np.inf, -np.inf], np.nan)
+        data[data > 3.40282346638528859811704183484516925440e30] = np.nan
+        data.dropna(inplace=True)
+        return data
+
     def separate_false_and_true_data(self):
         open(os.path.join(self.clear_data_path, "true_data.csv"), "w").close()
         open(os.path.join(self.clear_data_path, "false_data.csv"), "w").close()
@@ -27,14 +33,8 @@ class ThunderData(Data):
             )
             true_data = read_file[read_file["TunderYN"] == 1.0]
             false_data = read_file[read_file["TunderYN"] == 0.0]
-            true_data = true_data.replace([np.inf, -np.inf], np.nan)
-            false_data = false_data.replace([np.inf, -np.inf], np.nan)
-            true_data[true_data > 3.40282346638528859811704183484516925440e30] = np.nan
-            false_data[
-                false_data > 3.40282346638528859811704183484516925440e30
-            ] = np.nan
-            true_data.dropna(inplace=True)
-            false_data.dropna(inplace=True)
+            true_data = self.del_garbage(true_data)
+            false_data = self.del_garbage(false_data)
             true_data = true_data.iloc[:, 0:90]
             false_data = false_data.iloc[:, 0:90]
             true_data.to_csv(
