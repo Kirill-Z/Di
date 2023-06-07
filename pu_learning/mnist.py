@@ -34,7 +34,7 @@ class MnistEstimator(Estimator):
             X_N = np.concatenate((X_N, X_orig[y_orig == n, :, :]))
 
         y_P = np.ones((X_P.shape[0], 1))
-        y_N = np.full((X_N.shape[0], 1), -1)
+        y_N = np.full((X_N.shape[0], 1), 0)
 
         X_P = X_P.reshape(X_P.shape[0], X_P.shape[1] * X_P.shape[2])
         X_N = X_N.reshape(X_N.shape[0], X_N.shape[1] * X_N.shape[2])
@@ -56,7 +56,15 @@ class MnistEstimator(Estimator):
     def main(self):
         if self.neural_network:
             self.result = pd.DataFrame(
-                columns=["c", "Num of data", "Precision", "Recall", "F1-score"]
+                columns=[
+                    "c",
+                    "Num of negative data",
+                    "Num of positive data",
+                    "Total num of data",
+                    "Precision",
+                    "Recall",
+                    "F1-score",
+                ]
             )
             for c in self.percent_of_positive_data:
                 for num_of_data in self.num_of_data_list:
@@ -68,12 +76,16 @@ class MnistEstimator(Estimator):
                     precision, recall, f1_score = cnn(
                         x_train, s_train.ravel(), x_test, y_test.ravel(), shape_size
                     )
+                    num_of_positive_data = len(np.where(s_train == 1.0)[0])
+                    num_of_negative_data = len(np.where(s_train == 0)[0])
                     stat = {
                         "c": c,
-                        "Num of data": int(num_of_data),
-                        "Precision": precision,
-                        "Recall": recall,
-                        "F1-score": f1_score,
+                        "Num of negative data": int(num_of_negative_data),
+                        "Num of positive data": int(num_of_positive_data),
+                        "Total num of data": int(num_of_negative_data) + int(num_of_positive_data),
+                        "Precision": round(precision, 3),
+                        "Recall": round(recall, 3),
+                        "F1-score": round(f1_score, 3),
                     }
                     self.result = self.result._append(stat, ignore_index=True)
         else:
@@ -130,7 +142,7 @@ class MnistEstimator(Estimator):
 if __name__ == "__main__":
     estimator = MnistEstimator(
         data=tf.keras.datasets.mnist,
-        estimator=SVC(),
-        neural_network=False,
+        estimator=SVC(probability=True),
+        neural_network=True,
     )
     estimator.main()
