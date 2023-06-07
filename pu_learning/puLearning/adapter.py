@@ -41,5 +41,5 @@ class PUAdapter(object):
         probablistic_predictions = probablistic_predictions[:, 1]
         return probablistic_predictions / self.c
 
-    def predict(self, x, threshold=0.5):
+    def predict(self, x, threshold=1):
         return np.array([1.0 if p > threshold else -1 for p in self.predict_proba(x)])

@@ -2,6 +2,10 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.svm import SVC
+
+import matplotlib.pyplot as plt
 
 from CNN import cnn
 from estimator import Estimator, convert_to_PU, shuffle
@@ -11,7 +15,7 @@ class MnistEstimator(Estimator):
     def __init__(self, data, estimator, neural_network):
         self.data = data
         super().__init__(data, estimator, neural_network)
-        self.num_of_data_list = [60000, 45000, 30000, 15000, 5000, 1000]
+        self.num_of_data_list = [60000, 45000, 30000, 15000, 5000]
 
     def convert_data_to_binary(self, x_train_all, y_train_all):
         # @markdown Select positive and negative classes:
@@ -77,12 +81,56 @@ class MnistEstimator(Estimator):
                 self.get_estimates("PU learning in progress...", c)
             self.get_estimates("Regular learning in progress...")
         print(self.result)
+        x = self.result["Num of negative data"] + self.result["Num of negative data"]
+        y = self.result["Num of positive data"] / self.result["Num of negative data"]
+        z = self.result["Precision"]
+        fontsize = 30
+        points_whole_ax = 5 * 0.8 * 72  # 1 point = dpi / 72 pixels
+        radius = 0.4
+        rad = 2 * radius / 1.0 * points_whole_ax
+
+        plt.scatter(y, z, c=x, s=rad, cmap="rainbow")
+        plt.suptitle("Отношение точности к балансировке обучающей выборки", fontsize=fontsize)
+        plt.xlabel("Отношение данных с положительной меткой к неразмеченным данным", fontsize=fontsize)
+        plt.xticks(fontsize=fontsize)
+        plt.yticks(fontsize=fontsize)
+        plt.ylabel("Точность", fontsize=fontsize)
+        cbar = plt.colorbar()
+        cbar.set_label(label="Общее кол-во данных", size=fontsize)
+        cbar.ax.tick_params(labelsize=fontsize)
+        plt.show()
+
+        z = self.result["Recall"]
+
+        plt.scatter(y, z, c=x, s=rad, cmap="rainbow")
+        plt.suptitle("Отношение оправдываемости к балансировке обучающей выборки", fontsize=fontsize)
+        plt.xlabel("Отношение данных с положительной меткой к неразмеченным данным", fontsize=fontsize)
+        plt.xticks(fontsize=fontsize)
+        plt.yticks(fontsize=fontsize)
+        plt.ylabel("Оправдываемость", fontsize=fontsize)
+        cbar = plt.colorbar()
+        cbar.set_label(label="Общее кол-во данных", size=fontsize)
+        cbar.ax.tick_params(labelsize=fontsize)
+        plt.show()
+
+        z = self.result["F1-score"]
+
+        plt.scatter(y, z, c=x, s=rad, cmap="rainbow")
+        plt.suptitle("Отношение F1 меры к балансировке обучающей выборки", fontsize=fontsize)
+        plt.xlabel("Отношение данных с положительной меткой к неразмеченным данным", fontsize=fontsize)
+        plt.xticks(fontsize=fontsize)
+        plt.yticks(fontsize=fontsize)
+        plt.ylabel("F1 мера", fontsize=fontsize)
+        cbar = plt.colorbar()
+        cbar.set_label(label="Общее кол-во данных", size=fontsize)
+        cbar.ax.tick_params(labelsize=fontsize)
+        plt.show()
 
 
 if __name__ == "__main__":
     estimator = MnistEstimator(
         data=tf.keras.datasets.mnist,
-        estimator=RandomForestClassifier(n_jobs=4),
+        estimator=SVC(),
         neural_network=False,
     )
     estimator.main()

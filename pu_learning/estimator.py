@@ -88,7 +88,7 @@ class Estimator:
         self.data = data
         self.estimator = estimator
         self.neural_network = neural_network
-        self.percent_of_positive_data = [0.3, 0.5, 0.7, 1]
+        self.percent_of_positive_data = [0.3, 0.5, 0.7]
         self.num_of_data_list = None
         self.result = pd.DataFrame(
             columns=[
@@ -146,10 +146,23 @@ class Estimator:
                 num_of_data,
                 len(self.x_train),
             )
+            print(
+                "\nnum of positive data",
+                len(np.where(s_train == 1.0)[0]),
+                "\nnum of negative data",
+                len(np.where(s_train == -1.0)[0]),
+            )
             y_pred = self.get_predicted_class(
                 PUAdapter(self.estimator), x_train, s_train.ravel(), x_test
             )
             conf_matrix = confusion_matrix(y_test, y_pred)
+            print("\nlen test data: ", len(y_test))
+            print(
+                "num of positive data",
+                len(np.where(y_test == 1.0)[0]),
+                "\nnum of negative data",
+                len(np.where(y_test == -1.0)[0]),
+            )
             tn, fp, fn, tp = conf_matrix.ravel()
             print("tn:", tn, "fp:", fp)
             print("fn:", fn, "tp:", tp)
