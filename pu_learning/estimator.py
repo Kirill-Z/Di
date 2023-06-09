@@ -45,7 +45,7 @@ def convert_to_PU(X, y, c, num_of_data, default_num_of_data):
     y_reshaped = y.reshape(y.shape[0])
 
     pos_mask = y_reshaped == 1.0
-    neg_mask = y_reshaped == 0
+    neg_mask = y_reshaped == -1.0
 
     pos = X[pos_mask, :]
     neg = X[neg_mask, :]
@@ -62,8 +62,8 @@ def convert_to_PU(X, y, c, num_of_data, default_num_of_data):
     U = shuffle(U)
 
     X = np.concatenate((P, U))
-    y = np.concatenate((np.ones((pos.shape[0], 1)), np.full((neg.shape[0], 1), -0)))
-    s = np.concatenate((np.ones((P.shape[0], 1)), np.full((U.shape[0], 1), -0)))
+    y = np.concatenate((np.ones((pos.shape[0], 1)), np.full((neg.shape[0], 1), -1.0)))
+    s = np.concatenate((np.ones((P.shape[0], 1)), np.full((U.shape[0], 1), -1.0)))
 
     if num_of_data == default_num_of_data:
         end_num_of_data = default_num_of_data

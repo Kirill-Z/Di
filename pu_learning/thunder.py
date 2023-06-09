@@ -25,7 +25,11 @@ class ThunderEstimator(WindEstimator):
         radius = 0.4
         rad = 2 * radius / 1.0 * points_whole_ax
 
+        text = [str(i) for i in self.result["c"]]
+
         plt.scatter(y, z, c=x, s=rad, cmap="rainbow")
+        for i in range(len(z)):
+            plt.annotate(text[i], (y[i], z[i]), xycoords='data', xytext=(-9, -20), textcoords='offset points')
         plt.suptitle("Отношение точности к балансировке обучающей выборки", fontsize=fontsize)
         plt.xlabel("Отношение данных с положительной меткой к неразмеченным данным", fontsize=fontsize)
         plt.xticks(fontsize=fontsize)
@@ -39,6 +43,8 @@ class ThunderEstimator(WindEstimator):
         z = self.result["Recall"]
 
         plt.scatter(y, z, c=x, s=rad, cmap="rainbow")
+        for i in range(len(z)):
+            plt.annotate(text[i], (y[i], z[i]), xycoords='data', xytext=(-9, -20), textcoords='offset points')
         plt.suptitle("Отношение оправдываемости к балансировке обучающей выборки", fontsize=fontsize)
         plt.xlabel("Отношение данных с положительной меткой к неразмеченным данным", fontsize=fontsize)
         plt.xticks(fontsize=fontsize)
@@ -52,6 +58,8 @@ class ThunderEstimator(WindEstimator):
         z = self.result["F1-score"]
 
         plt.scatter(y, z, c=x, s=rad, cmap="rainbow")
+        for i in range(len(z)):
+            plt.annotate(text[i], (y[i], z[i]), xycoords='data', xytext=(-9, -20), textcoords='offset points')
         plt.suptitle("Отношение F1 меры к балансировке обучающей выборки", fontsize=fontsize)
         plt.xlabel("Отношение данных с положительной меткой к неразмеченным данным", fontsize=fontsize)
         plt.xticks(fontsize=fontsize)
@@ -67,6 +75,6 @@ class ThunderEstimator(WindEstimator):
 if __name__ == "__main__":
     data = ThunderData(garbage=False)
     estimator = ThunderEstimator(
-        data=data, estimator=DecisionTreeClassifier(), neural_network=False
+        data=data, estimator=RandomForestClassifier(n_jobs=4), neural_network=False
     )
     estimator.main()
