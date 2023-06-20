@@ -1,7 +1,5 @@
 import matplotlib.pyplot as plt
-import numpy as np
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.tree import DecisionTreeClassifier
 
 
 from load_thunder_data import ThunderData
@@ -82,7 +80,7 @@ class ThunderEstimator(WindEstimator):
 
 
 if __name__ == "__main__":
-    data = ThunderData(garbage=False)
+    data = ThunderData("dir_path", "clear_dir_path", False)
     estimator = ThunderEstimator(
         data=data, estimator=RandomForestClassifier(n_jobs=4), neural_network=False
     )

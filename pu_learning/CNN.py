@@ -1,9 +1,7 @@
 import numpy as np
-import pandas as pd
 from keras import layers
 from keras.models import Sequential
 from sklearn.metrics import precision_recall_fscore_support
-from tensorflow import keras
 
 
 def cnn_builder():
@@ -43,5 +41,4 @@ def cnn(x_train, y_train, x_test, y_test, shape_size):
     precision, recall, f1_score, _ = precision_recall_fscore_support(
         y_test, predictions
     )
-    print("precision, recall, f1_score:", precision, recall, f1_score)
     return precision[1], recall[1], f1_score[1]

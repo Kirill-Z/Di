@@ -2,8 +2,6 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.svm import SVC
 
 import matplotlib.pyplot as plt
 
@@ -145,7 +143,7 @@ class MnistEstimator(Estimator):
 if __name__ == "__main__":
     estimator = MnistEstimator(
         data=tf.keras.datasets.mnist,
-        estimator=DecisionTreeClassifier(),
+        estimator=RandomForestClassifier(n_jobs=4),
         neural_network=False,
     )
     estimator.main()

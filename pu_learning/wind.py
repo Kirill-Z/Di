@@ -100,7 +100,7 @@ class WindEstimator(Estimator):
 
 
 if __name__ == "__main__":
-    data = WindData(garbage=True)
+    data = WindData("dir_path", "clear_dir_path", False)
     estimator = WindEstimator(
         data=data, estimator=RandomForestClassifier(n_jobs=4), neural_network=False
     )

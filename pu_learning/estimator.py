@@ -37,10 +37,8 @@ def shuffle(x, y=empty, z=empty):
 
 
 def convert_to_PU(X, y, c, num_of_data, default_num_of_data):
-    n, m = X.shape
     len_y = len(np.where(y == 1.0)[0])
     pos_size = int(c * len_y)
-    # Separate positive and negative data
     y_reshaped = y.reshape(y.shape[0])
 
     pos_mask = y_reshaped == 1.0
@@ -49,7 +47,6 @@ def convert_to_PU(X, y, c, num_of_data, default_num_of_data):
     pos = X[pos_mask, :]
     neg = X[neg_mask, :]
 
-    # Shuffle pos and neg before dividing them up
     pos = shuffle(pos)
     neg = shuffle(neg)
 
@@ -145,23 +142,11 @@ class Estimator:
                 num_of_data,
                 len(self.x_train),
             )
-            print(
-                "\nnum of positive data",
-                len(np.where(s_train == 1.0)[0]),
-                "\nnum of negative data",
-                len(np.where(s_train == -1.0)[0]),
-            )
+
             y_pred = self.get_predicted_class(
                 PUAdapter(self.estimator), x_train, s_train.ravel(), x_test
             )
             conf_matrix = confusion_matrix(y_test, y_pred)
-            print("\nlen test data: ", len(y_test))
-            print(
-                "num of positive data",
-                len(np.where(y_test == 1.0)[0]),
-                "\nnum of negative data",
-                len(np.where(y_test == -1.0)[0]),
-            )
             tn, fp, fn, tp = conf_matrix.ravel()
             print("tn:", tn, "fp:", fp)
             print("fn:", fn, "tp:", tp)

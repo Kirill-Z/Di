@@ -7,10 +7,10 @@ from load_data import Data
 
 
 class ThunderData(Data):
-    def __init__(self, garbage):
+    def __init__(self, garbage, dir_path, clear_dir_path):
         super().__init__(garbage)
-        self.dir_path = "/home/kirill/PycharmProjects/Di/thunder_data"
-        self.clear_data_path = "/home/kirill/PycharmProjects/Di/clear_thunder_data"
+        self.dir_path = dir_path
+        self.clear_data_path = clear_dir_path
 
     def get_data(self):
         true_data, false_data = self.get_raw_data()
