@@ -18,16 +18,12 @@ class MnistEstimator(Estimator):
         self.num_of_data_list = [60000, 45000, 30000, 15000, 5000]
 
     def convert_data_to_binary(self, x_train_all, y_train_all):
-        # @markdown Select positive and negative classes:
         Positive_class = 8
         Negative_class = [0, 1, 2, 3, 4, 5, 6, 7, 9]
 
-        # Load entire data set
-        # combine data for PU problem
         X_orig = x_train_all
         y_orig = y_train_all
 
-        # isolate desired digits
         X_P = X_orig[y_orig == Positive_class, :, :]
         X_N = X_orig[y_orig == Negative_class[0], :, :]
         for n in Negative_class[1:]:
@@ -96,16 +92,13 @@ class MnistEstimator(Estimator):
         x = self.result["Num of negative data"] + self.result["Num of negative data"]
         y = self.result["Num of positive data"] / self.result["Num of negative data"]
         z = self.result["Precision"]
-        fontsize = 30
-        points_whole_ax = 5 * 0.8 * 72  # 1 point = dpi / 72 pixels
-        radius = 0.4
+        fontsize = 34
+        points_whole_ax = 5 * 0.8 * 72
+        radius = 1.2
         rad = 2 * radius / 1.0 * points_whole_ax
 
-        # plt.scatter(y, z, c=x, s=rad, cmap="rainbow")
         text = [str(i) for i in self.result["c"]]
-        print(text)
-        """#for i in range(len(z)):
-        #    plt.annotate(text[i], (y[i], z[i]), xycoords='data', xytext=(-7, -20), textcoords='offset points')
+
         plt.suptitle("Отношение точности к балансировке обучающей выборки", fontsize=fontsize)
         plt.xlabel("Отношение данных с положительной меткой к неразмеченным данным", fontsize=fontsize)
         plt.xticks(fontsize=fontsize)
@@ -114,9 +107,9 @@ class MnistEstimator(Estimator):
         cbar = plt.colorbar()
         cbar.set_label(label="Общее кол-во данных", size=fontsize)
         cbar.ax.tick_params(labelsize=fontsize)
-        plt.show()"""
+        plt.show()
 
-        """z = self.result["Recall"]
+        z = self.result["Recall"]
 
         plt.scatter(y, z, c=x, s=rad, cmap="rainbow")
         for i in range(len(z)):
@@ -130,14 +123,16 @@ class MnistEstimator(Estimator):
         cbar.set_label(label="Общее кол-во данных", size=fontsize)
         cbar.ax.tick_params(labelsize=fontsize)
         plt.show()
-"""
+
         z = self.result["F1-score"]
 
         plt.scatter(y, z, c=x, s=rad, cmap="rainbow")
+        plt.subplots_adjust(left=0.13, bottom=0.114, right=0.983, top=0.926)
         for i in range(len(z)):
-            plt.annotate(text[i], (y[i], z[i]), xycoords='data', xytext=(-7, -20), textcoords='offset points')
+            plt.annotate(text[i], (y[i], z[i]), xycoords='data', xytext=(-7, -22), textcoords='offset points')
         plt.suptitle("Отношение F1 меры к балансировке обучающей выборки", fontsize=fontsize)
-        plt.xlabel("Отношение данных с положительной меткой к неразмеченным данным", fontsize=fontsize)
+        plt.xlabel("Отношение данных с положительной меткой к неразмеченным данным", fontsize=fontsize, labelpad=10)
+        plt.xlim((0.01, 1.25))
         plt.xticks(fontsize=fontsize)
         plt.yticks(fontsize=fontsize)
         plt.ylabel("F1 мера", fontsize=fontsize)
@@ -150,7 +145,7 @@ class MnistEstimator(Estimator):
 if __name__ == "__main__":
     estimator = MnistEstimator(
         data=tf.keras.datasets.mnist,
-        estimator=RandomForestClassifier(n_jobs=4),
+        estimator=DecisionTreeClassifier(),
         neural_network=False,
     )
     estimator.main()

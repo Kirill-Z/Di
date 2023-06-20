@@ -20,18 +20,22 @@ class ThunderEstimator(WindEstimator):
         x = self.result["Num of negative data"] + self.result["Num of negative data"]
         y = self.result["Num of positive data"] / self.result["Num of negative data"]
         z = self.result["Precision"]
-        fontsize = 30
-        points_whole_ax = 5 * 0.8 * 72  # 1 point = dpi / 72 pixels
-        radius = 0.4
+        fontsize = 34
+        points_whole_ax = 5 * 0.8 * 72
+        radius = 1.2
         rad = 2 * radius / 1.0 * points_whole_ax
 
         text = [str(i) for i in self.result["c"]]
-
         plt.scatter(y, z, c=x, s=rad, cmap="rainbow")
+        plt.subplots_adjust(left=0.13, bottom=0.114, right=0.983, top=0.926)
         for i in range(len(z)):
-            plt.annotate(text[i], (y[i], z[i]), xycoords='data', xytext=(-9, -20), textcoords='offset points')
+            plt.annotate(text[i], (y[i], z[i]), xycoords='data', xytext=(-7, -22), textcoords='offset points')
+        text = [str(i) for i in self.result["c"]]
+        print(text)
+
         plt.suptitle("Отношение точности к балансировке обучающей выборки", fontsize=fontsize)
         plt.xlabel("Отношение данных с положительной меткой к неразмеченным данным", fontsize=fontsize)
+        plt.xlim((0.01, 1.2))
         plt.xticks(fontsize=fontsize)
         plt.yticks(fontsize=fontsize)
         plt.ylabel("Точность", fontsize=fontsize)
@@ -43,10 +47,13 @@ class ThunderEstimator(WindEstimator):
         z = self.result["Recall"]
 
         plt.scatter(y, z, c=x, s=rad, cmap="rainbow")
+        plt.subplots_adjust(left=0.13, bottom=0.114, right=0.983, top=0.926)
         for i in range(len(z)):
-            plt.annotate(text[i], (y[i], z[i]), xycoords='data', xytext=(-9, -20), textcoords='offset points')
+            plt.annotate(text[i], (y[i], z[i]), xycoords='data', xytext=(-7, -22), textcoords='offset points')
+
         plt.suptitle("Отношение оправдываемости к балансировке обучающей выборки", fontsize=fontsize)
         plt.xlabel("Отношение данных с положительной меткой к неразмеченным данным", fontsize=fontsize)
+        plt.xlim((0.01, 1.2))
         plt.xticks(fontsize=fontsize)
         plt.yticks(fontsize=fontsize)
         plt.ylabel("Оправдываемость", fontsize=fontsize)
@@ -58,10 +65,12 @@ class ThunderEstimator(WindEstimator):
         z = self.result["F1-score"]
 
         plt.scatter(y, z, c=x, s=rad, cmap="rainbow")
+        plt.subplots_adjust(left=0.13, bottom=0.114, right=0.983, top=0.926)
         for i in range(len(z)):
-            plt.annotate(text[i], (y[i], z[i]), xycoords='data', xytext=(-9, -20), textcoords='offset points')
+            plt.annotate(text[i], (y[i], z[i]), xycoords='data', xytext=(-7, -22), textcoords='offset points')
         plt.suptitle("Отношение F1 меры к балансировке обучающей выборки", fontsize=fontsize)
         plt.xlabel("Отношение данных с положительной меткой к неразмеченным данным", fontsize=fontsize)
+        plt.xlim((0.01, 1.2))
         plt.xticks(fontsize=fontsize)
         plt.yticks(fontsize=fontsize)
         plt.ylabel("F1 мера", fontsize=fontsize)

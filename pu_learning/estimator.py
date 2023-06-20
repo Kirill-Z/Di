@@ -26,7 +26,6 @@ def shuffle(x, y=empty, z=empty):
         z_shuffled = z[order, :]
         z_flag = True
 
-    # Accomodate different number of outputs
     if y_flag and z_flag:
         return x_shuffled, y_shuffled, z_shuffled
     elif y_flag and not z_flag:
