@@ -1,5 +1,7 @@
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.tree import DecisionTreeClassifier
+from CNN import cnn
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
 
@@ -30,8 +32,7 @@ class WindEstimator(Estimator):
     def main(self):
         for c in self.percent_of_positive_data:
             self.get_estimates("PU learning in progress...", c)
-        self.get_estimates("Regular learning in progress...")
-        print(self.result)
+        #self.get_estimates("Regular learning in progress...")
         print(self.result)
         x = self.result["Num of negative data"] + self.result["Num of negative data"]
         y = self.result["Num of positive data"] / self.result["Num of negative data"]
@@ -43,7 +44,7 @@ class WindEstimator(Estimator):
 
         # plt.scatter(y, z, c=x, s=rad, cmap="rainbow")
         text = [str(i) for i in self.result["c"]]
-        plt.scatter(y, z, c=x, s=rad, cmap="rainbow")
+        """plt.scatter(y, z, c=x, s=rad, cmap="rainbow")
         plt.subplots_adjust(left=0.13, bottom=0.114, right=0.983, top=0.926)
         for i in range(len(z)):
             plt.annotate(text[i], (y[i], z[i]), xycoords='data', xytext=(-7, -22), textcoords='offset points')
@@ -53,8 +54,8 @@ class WindEstimator(Estimator):
         #    plt.annotate(text[i], (y[i], z[i]), xycoords='data', xytext=(-7, -20), textcoords='offset points')
         plt.suptitle("Отношение точности к балансировке обучающей выборки", fontsize=fontsize)
         plt.xlabel("Отношение данных с положительной меткой к неразмеченным данным", fontsize=fontsize)
-        plt.xlim((0.01, 1.2))
-        plt.xticks(fontsize=fontsize)
+        #plt.xlim((0.01, 1.2))
+        plt.xticks(np.arange(0.05, 1.2, 0.2), fontsize=fontsize)
         plt.yticks(fontsize=fontsize)
         plt.ylabel("Точность", fontsize=fontsize)
         cbar = plt.colorbar()
@@ -72,8 +73,8 @@ class WindEstimator(Estimator):
         #    plt.annotate(text[i], (y[i], z[i]), xycoords='data', xytext=(-7, -20), textcoords='offset points')
         plt.suptitle("Отношение оправдываемости к балансировке обучающей выборки", fontsize=fontsize)
         plt.xlabel("Отношение данных с положительной меткой к неразмеченным данным", fontsize=fontsize)
-        plt.xlim((0.01, 1.2))
-        plt.xticks(fontsize=fontsize)
+        #plt.xlim((0.01, 1.2))
+        plt.xticks(np.arange(0.05, 1.2, 0.2), fontsize=fontsize)
         plt.yticks(fontsize=fontsize)
         plt.ylabel("Оправдываемость", fontsize=fontsize)
         cbar = plt.colorbar()
@@ -89,19 +90,37 @@ class WindEstimator(Estimator):
             plt.annotate(text[i], (y[i], z[i]), xycoords='data', xytext=(-7, -22), textcoords='offset points')
         plt.suptitle("Отношение F1 меры к балансировке обучающей выборки", fontsize=fontsize)
         plt.xlabel("Отношение данных с положительной меткой к неразмеченным данным", fontsize=fontsize)
-        plt.xlim((0.01, 1.2))
-        plt.xticks(fontsize=fontsize)
+        #plt.xlim((0.01, 1.2))
+        plt.xticks(np.arange(0.05, 1.2, 0.2), fontsize=fontsize)
         plt.yticks(fontsize=fontsize)
         plt.ylabel("F1 мера", fontsize=fontsize)
         cbar = plt.colorbar()
         cbar.set_label(label="Общее кол-во данных", size=fontsize)
         cbar.ax.tick_params(labelsize=fontsize)
+        plt.show()"""
+        x = self.result["c"][::5]
+        y1 = self.result["F1-score"][::5]
+        y2 = self.result["F1-score"][1::5]
+        y3 = self.result["F1-score"][2::5]
+        y4 = self.result["F1-score"][3::5]
+        y5 = self.result["F1-score"][4::5]
+
+        plt.plot(x, y1, label=int(self.result["Total num of data"][0]))
+        plt.plot(x, y2, label=int(self.result["Total num of data"][1]))
+        plt.plot(x, y3, label=int(self.result["Total num of data"][2]))
+        plt.plot(x, y4, label=int(self.result["Total num of data"][3]))
+        plt.plot(x, y5, label=int(self.result["Total num of data"][4]))
+        plt.legend(loc=4, prop={"size": fontsize})
+        plt.xticks(fontsize=fontsize)
+        plt.yticks(fontsize=fontsize)
+        plt.grid()
         plt.show()
 
-
+dir_path = "/home/kirill/PycharmProjects/Di/wind_data"
+clear_dir_path = "/home/kirill/PycharmProjects/Di/clear_wind_data"
 if __name__ == "__main__":
-    data = WindData("dir_path", "clear_dir_path", False)
+    data = WindData(False, dir_path, clear_dir_path)
     estimator = WindEstimator(
-        data=data, estimator=RandomForestClassifier(n_jobs=4), neural_network=False
+        data=data, estimator=cnn(), neural_network=True
     )
     estimator.main()

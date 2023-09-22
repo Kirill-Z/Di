@@ -49,3 +49,12 @@ class ThunderData(Data):
                 header=None,
                 index=False,
             )
+
+
+t_data = ThunderData(
+    False,
+    "/home/kirill/PycharmProjects/Di/thunder_data",
+    "/home/kirill/PycharmProjects/Di/clear_thunder_data"
+)
+
+t_data.separate_false_and_true_data()
